@@ -9,6 +9,20 @@ with the pre-1.0 rule that a breaking change bumps the MINOR number.
 
 The documentation and comments in plain prose; no declaration changed.
 
+### Corrected against the CUDA runtime API reference
+
+- `cudaGetErrorString` and `cudaGetErrorName` answer the address of a C
+  string. Every other entry point answers a `cudaError_t`.
+- `cudaGetDeviceCount` answers `cudaErrorNoDevice` on a machine the
+  runtime finds no card on, and `cudaErrorInsufficientDriver` when the
+  driver is older than the toolkit.
+- `cudaMemcpyKind` defines `cudaMemcpyHostToHost` as 0. Any value
+  outside the five answers `cudaErrorInvalidMemcpyDirection`.
+- `cudaDeviceSynchronize` answers a failure when one of the preceding
+  tasks failed. It does not promise the last one.
+- `cudaMalloc` writes the address into a slot the caller supplies,
+  where `malloc` answers the address directly.
+
 ## 0.1.0 — 2026-09-15
 
 The first release: thirteen entry points of the CUDA runtime library,
