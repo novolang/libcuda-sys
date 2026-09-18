@@ -1,13 +1,12 @@
 [package]
 name        = "libcuda-sys"
-version     = "0.1.0"
+version     = "0.1.1"
 description = "Bindings over the CUDA runtime library: the device count, the current device, device memory, the four copy directions, the synchronisation barrier and the error codes."
 license     = "Apache-2.0"
 
-# NOT a `0.0.x` draft.  An interface release is the shape whose every
-# `pub fn` body is a `todo()`, and every `pub fn` here is an `@ffi`
-# declaration with no body at all — `novo pkg publish` reads that as a
-# release with bodies and refuses a `0.0.x` version for it.
+# `experimental` because no program outside this repository has used
+# the package yet, and the tests exercise the entry points rather than
+# a consumer's use of them.
 stability   = "experimental"
 
 # `sys`: the layer for a package that binds one C library and decides
@@ -19,7 +18,7 @@ category    = "bindings"
 
 # The one C library.  `libcudart.so` is the CUDA runtime, the half of
 # the CUDA toolkit whose symbols begin `cuda`.  `libcuda.so` is the
-# driver, a different library with a different API, and none of the
+# driver, a different library with a different C API, and none of the
 # symbols below are in it.  Installing this package installs neither.
 wraps       = "libcudart"
 
@@ -35,7 +34,7 @@ novo        = ">= 0.8.9"
 # None.  A binding over one C library depends on no novo-lang package.
 
 # The link flag for the `library = "cudart"` name every declaration in
-# `src/` carries.  The default would be the same `-lcudart`; the block
+# `src/` carries.  The default would be the same `-lcudart`.  The block
 # is here so a reader knows which flag to add a `-L` to when the CUDA
 # toolkit is installed somewhere the linker does not already look, such
 # as `/usr/local/cuda/lib64`.

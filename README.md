@@ -1,19 +1,18 @@
 # libcuda-sys
 
 CUDA is NVIDIA's platform for running general-purpose computation on a
-graphics card. The CUDA runtime library is the C interface a program
-uses to select a card, allocate memory on it, copy data to and from it,
-and wait for the work to finish. It is documented in
+graphics card. The CUDA runtime library is the C API a program uses to
+select a card, allocate memory on it, copy data to and from it, and
+wait for the work to finish. It is documented in
 [the CUDA Runtime API reference](https://docs.nvidia.com/cuda/cuda-runtime-api/).
 This package declares thirteen of that library's entry points to
 novo-lang, one declaration each.
 
-**Status: a binding, not a port.** Every function in this package is a
-declaration of a function in the CUDA runtime. The package contains no
-logic of its own, and it does nothing without the CUDA toolkit
-installed. The thirteen entry points are the ones a program needs to
-move data to a card and back; the section "What is not included" says
-what a program still cannot do with them alone.
+Every function here is a declaration of a function in the CUDA runtime.
+The package contains no logic of its own, and it does nothing without
+the CUDA toolkit installed. The thirteen entry points are the ones a
+program needs to move data to a card and back. The section "What is not
+included" says what a program cannot do with them alone.
 
 ## What it is
 
@@ -24,15 +23,16 @@ the card's memory, run the computation, and copy the result back. This
 package is the first and third steps.
 
 **Device memory** is the card's memory. `cuda_malloc` reserves a block
-of it and answers the address, exactly as `malloc` does for ordinary
-memory, except that the address means nothing to the processor running
-the program. Only the card can read it, and only through the runtime.
+of it and writes the address into a slot the caller supplies, where
+`malloc` answers the address directly. The address means nothing to the
+processor running the program. Only the card can read it, and only
+through the runtime.
 
 A **copy** moves bytes between the two memories. `cuda_memcpy` takes a
 destination address, a source address, a byte count and a direction. The
-direction is the fourth argument, and getting it wrong is the common
-mistake: the runtime cannot tell a host address from a device address by
-looking at it.
+direction is the fourth argument. Getting it wrong is the common
+mistake, because the runtime cannot tell a host address from a device
+address by looking at it.
 
 The runtime is **asynchronous** in places. A computation the card is
 asked to run returns to the program immediately, and the program finds
@@ -44,8 +44,9 @@ An **error** is an integer. Zero is success. Every other value has a
 name, such as `cudaErrorMemoryAllocation`, and a sentence of
 description, and the runtime supplies both.
 
-There are two CUDA libraries with two different interfaces. This package
-binds the **runtime**, `libcudart.so`, whose symbols begin `cuda`. The
+The CUDA toolkit ships two libraries with two different C APIs. This
+package binds the **runtime**, `libcudart.so`, whose symbols begin
+`cuda`. The
 other is the **driver**, `libcuda.so`, whose symbols begin `cu`. They
 are not interchangeable and none of the symbols below are in the driver.
 
@@ -138,9 +139,10 @@ The four groups:
    the code comes from `cuda_get_error_name` and the sentence from
    `cuda_get_error_string`. Both answer the address of a C string the
    runtime owns; read it with `ptr.read_str` and do not free it.
-4. **The copy direction is an argument, and it is not checked.** 1 is
-   host to device, 2 is device to host, 3 is device to device, and 4
-   asks the runtime to work it out from the two addresses. The runtime
+4. **The copy direction is an argument, and it is not checked.** 0 is
+   host to host, 1 is host to device, 2 is device to host, 3 is device
+   to device, and 4 asks the runtime to work it out from the two
+   addresses. The runtime
    cannot tell the two kinds of address apart by inspection, so 1 with
    the arguments the wrong way round is a fault rather than a message.
 5. **A byte count is a byte count.** Neither side checks the length of
@@ -180,8 +182,8 @@ The four groups:
   `cudaHostAlloc` change how the two memories relate to each other, and
   a program that wants them wants the streams as well.
 - **The driver API.** `cuInit`, `cuMemAlloc` and the rest are in
-  `libcuda.so`. They are a lower-level interface to the same hardware,
-  and a package that bound them would be a different package.
+  `libcuda.so`. They are a lower-level C API for the same hardware, and
+  a package that bound them would be a different package.
 
 ## Related packages
 
@@ -195,13 +197,13 @@ It is the right choice for a program that wants a graphics card rather
 than an NVIDIA one, and it installs nothing by hand.
 
 There is no novo-lang replacement for this package and none is planned.
-A graphics card is a piece of hardware whose interface is the vendor's
-own library. There is no format to reimplement.
+A graphics card is a piece of hardware whose published C API is the
+vendor's own library. There is no format to reimplement.
 
 ## Tests
 
-`tests/libcuda_tests.nv` holds nine tests written against the
-signatures:
+`tests/libcuda_tests.nv` holds nine tests over the thirteen entry
+points:
 
 ```
 novo test tests/libcuda_tests.nv
@@ -211,22 +213,11 @@ The suite links against the CUDA runtime, so it needs the toolkit
 installed. Without it the link fails, naming `-lcudart`. `novo pkg
 build` type-checks the declarations and needs nothing installed.
 
-The tests do not need a card. Each one accepts both answers: on a
+The tests do not need a card. Each one accepts both answers. On a
 machine with a card the successful path is asserted to be
 self-consistent, and on a machine without one the failure is asserted to
 carry a name. The round trip through device memory writes eight bytes
 up, reads them back, clears them and reads them back again.
-
-## Implementation status
-
-| Group | State |
-| --- | --- |
-| Device | Complete for selection and counting. |
-| Memory | Complete for synchronous allocation and copying. |
-| Synchronisation | Complete for the whole-device barrier. |
-| Errors | Complete. |
-| Streams and events | Absent. |
-| Kernels | Absent, and out of scope. |
 
 ## Licence
 
